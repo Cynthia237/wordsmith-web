@@ -1,25 +1,26 @@
-# Start from a Debian image with the latest version of Go installed
-FROM golang:latest
+FROM golang:1.21-alpine AS builder
 
-# Set the Current Working Directory inside the container
+WORKDIR /myapp 
+ # Adjust path based on your Go project structure
+COPY . .
+RUN go mod download
+RUN go build -o my-app ./
+
+FROM alpine:latest
+COPY --from=builder /myapp/my-app /app/myapp
 WORKDIR /app
 
-# Copy go mod and sum files
-COPY go.mod go.sum ./
+ENV WEB_APP_PORT=80 
+# Optional: Listening port
+EXPOSE $WEB_APP_PORT
 
-# Download all dependencies
-RUN go mod download
+# Configure database connection (replace with your approach)
+ENV DB_HOST=postgres  
+# Assuming PostgreSQL container name is "postgres"
+ENV DB_PORT=5432
+ENV DB_USER=userw
+ENV DB_PASSWORD=passwordw
+ENV DB_NAME=databasew
 
-# Copy the source code from the current directory to the Working Directory inside the container
-COPY . .
-
-# Build the Go app
-RUN go build -o main .
-
-# Expose port 8080 to the outside world
-EXPOSE 8080
-
-# Run the application on startup
-CMD ["./main"]
-
-
+# Entrypoint (replace with your logic)
+ENTRYPOINT ["/app/myapp", "-http", ":$WEB_APP_PORT"]
